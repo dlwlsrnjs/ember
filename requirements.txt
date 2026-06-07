@@ -1,0 +1,12 @@
+# Core learner (ember/, train_ember.py)
+numpy>=1.24
+scikit-learn>=1.3
+torch>=2.0
+
+# Stage 1-2 pipeline (simulation/, filter/)
+pandas>=2.0
+transformers>=4.40
+peft>=0.10
+bitsandbytes>=0.43
+vllm>=0.4
+openai>=1.40

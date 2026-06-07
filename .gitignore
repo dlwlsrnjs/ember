@@ -1,0 +1,25 @@
+# Data, caches, model artifacts — regenerate with the pipeline
+data/
+results/
+*.npz
+*.jsonl
+*.csv
+*.pt
+*.bin
+*.safetensors
+*.pdf
+lora_adapter*/
+**/checkpoint-*/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

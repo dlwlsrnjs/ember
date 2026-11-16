@@ -1,0 +1,64 @@
+R18 GPU fixed-feedback allocation × selection experiment — 2026-11-17
+사후 개발 실험, historical test 재사용. 새로운 cohort 확증 아님.
+
+주질문: 같은 frozen feedback/P*/budget에서 cold-ID별 negative allocation과
+within-Q teacher-negative selection은 어떤 utility/interaction을 갖는가?
+
+실행 panel: GPU만, 같은 훈련 구현/설정/장치에서5arms×3settings×3initializations=45
+첫 시도. O_T/O_R/U_T/U_R 및 NoOp. 기존129fits는 보존하고 새GPU효과와 섞지 않는다.
+GPU 두 장의 이전 학습이 종료되어 2026-11-17 01:14경 사용 가능함을 확인했다. 최대동시모델worker2, nice19,
+BLAS/OMP/torch intra/inter1. 실패보존, 자동재시도/결과매칭rerun없음.
+
+입력: corrected Q12K/settings0,1,2. 기존T/Rcache와no-opcache를읽기만한다.
+초기화 r0=s, r1/2=17000+100*s+r. 모든arm간paired.
+P*의feature/labels/slots, 모든warmrows, 전체B, 방향별N, negative-slot contexts,
+binary/core/q/is_aug와normalization/field/tasks/validation/test arrays를고정한다.
+U에서는negative slot의coldID/쌍feature가바뀐다. oppositewarm-degree는맞추지않는다.
+
+U quotas: full Q의teacher-negative가존재하는(direction,coldID) bucket들에,
+direction별원래N을integermax-min으로분배, teacherNcapacity를넘지않음.
+R16의단순ID순동점은원래ID순서효과를피하기위해pre-outcome고정SHA256우선순위
+'r17-allocation|setting|direction|ID'로대체한다. 이는설계초안대비변경이며
+R16feasibility의ID수/이동수와미세차이가날수있다. 성능을보고변경하지않는다.
+
+Minimal paired construction: bucket별first min(old,new) negative slots/counterparts를
+보존한다. surplus slot을같은direction의deficitbucket에고정priority순할당.
+T는해당Q의teacher-negative에서, R은Q\P*에서추가counterpart를비복원선택.
+원래선택된쌍중유지하는부분은그대로두고필요한추가쌍만seed+170771로추출한다.
+R은teacher-positive가선택돼도학습target0이며secondary도0. 모든P*/공통support는
+teacher조건부다. wholeteacher-free, groundtruthqualityoracle, LLM호출절감실험아님.
+T/R원cache exactreplay, quotas/coldness/unique-pair/positive/warm/contexts/target
+invariants통과후에만45jobs고정. 입력검사/캐시작성은새outcome효과검사가아니다.
+
+학습: 기존sel.config()그대로 Adam/batch1024/lr1e-3/max20/min10/patience5,
+warm-supportgate, hybridobjective/gradientprocessor동일. cache.test=None로fit.
+earliestmaximum validation overallRecall20 checkpoint 저장/hash선택영수증먼저기록,
+그뒤고정testinference. 주지표coldRecall20와selectionoverall의차이를명시.
+validationpolicy도overallRecall20최대, 동점NoOp→O_T→O_R→U_T→U_R순.
+test는arm/checkpoint/policy선택에사용하지않는다. 모든forcedarm결과를보존한다.
+
+주요contrasts: U_T−O_T, U_R−O_R, O_T−O_R, U_T−U_R,
+interaction=(U_T−O_T)−(U_R−O_R),4arms각각−NoOp,validationpolicy−NoOp.
+주지표coldR20; secondarycoldN20/warmR20. cold-item/user/both별R20/N20도보고.
+mean은setting내init평균후3setting평균. setting-t2 CI와별도20Ksetting→pairedinit
+→paireduserclusterbootstrap(baseRNG2026111701, variant순서별+100*v). exploratory/unadjusted,3coupledsettings
+및sharedcorpus/teacher로populationcalibration은제한. null은동등성아님.
+가산원인분해나'이득의몇%'를계산하지않는다. collector/hash를신규outcome열람전고정.
+
+선택checkpoint 추가평가(모두GPU, 재학습/재선택0):
+sampled_original: 기존100candidate순서/target을그대로CPUrescore.
+sampled_id_ties: 같은100items/targets를ID순stabletie로평가.
+eligible_fixed_targets: 원casewarm/coldpool내모든unobserveditems+기존sampledpositive
+targets, sampled에서선택안된observedpositives와observednegatives제외.
+eligible_all_targets: 같은pool내모든unobserveditems+모든observedperiodpositives,
+observednegative제외. positive cap없음. observeduniverse는같은historicaltest.
+원100개feature의fullfeature exactlookup 검증. ItemIDstableties는label-independent.
+점수경계tie수, candidate/positive수, analyticalrandomRecall20=20/n 기록.
+이것은unsampledeligiblecasepoolranking이지mixedfullcatalog/online전개검증아님.
+전체candidate평가로checkpoint/model/policy를다시고르지않는다.
+
+보고: GPU45모두완료및collector고정전까지새test숫자를rootprogress로노출하지않음.
+stage별실패/부분출력보존. 불완료면완료라고쓰지않음. 기존V16/각review및129fits불변.
+새학습과분석후,결과에맞게4쪽원고를작성한다. 성능/배분우월/채택을미리주장하지않음.
+
+R18 장치 변경: 사용자 요청 후 H100 2장 모두 여유 확인. R17 CPU 2시도는 완료 결과0개인 상태에서 중단하고 기록 보존. R17 학습 소스/부분시도를 수정하지 않음. 이번 45개는 별도 GPU first fits. 같은 입력/초기화/분석, 서로 다른 cuda index 사용 가능. 기존 CPU 수치 또는 과거 GPU 모델을 이번 비교에 섞지 않음. CUDA checkpoint 재추론 차이가 생겨도 매칭 rerun하지 않음. 결과를 보고 선택한 변경이 아님.
